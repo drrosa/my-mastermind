@@ -9,12 +9,12 @@
 # define NUM_PIECES 9
 
 typedef struct s_game_info {
+    unsigned int pieces[NUM_PIECES];
     unsigned int attempts;
     unsigned int well_placed;
     unsigned int misplaced;
     char* code;
     bool won;
-    bool* pieces;
 } game_info;
 
 /*
@@ -46,9 +46,9 @@ char* generate_secret_code(char* secret_code) {
 *   secret code or number of attempts if any.
 *   Otherwise, it generates a randomized secret
 *   code and sets number of attempts to MAX_ATTEMPTS.
-*   Lastly, it initializes a bit map, setting
-*   secret code pieces to one and the rest to zero
-*   to make it easier to find misplaced pieces.
+*   Lastly, it counts the number of secret code pieces
+*   of the same color and initiliazes the rest to zero
+*   to make it easier to keep track of misplaced pieces.
 */
 void init_game(char** argv, game_info* game) {
     game->code =    argv[1] && argv[2] && argv[1][1] == 'c' ? argv[2] :
@@ -62,24 +62,26 @@ void init_game(char** argv, game_info* game) {
     game->won = false;
 
     for (int i = 0; i < CODE_SIZE; i++)
-        game->pieces[game->code[i] - '0'] = true;
+        game->pieces[game->code[i] - '0'] += 1;
 }
 
-void print_bit_map(bool bits[NUM_PIECES]) {
+void print_bit_map(unsigned int bits[NUM_PIECES]) {
     for (int i = 0; i < NUM_PIECES; i++)
         printf("%u ", bits[i]);
 }
 
-bool check_guess(char* guess, game_info* game) {
+bool check_guess(char* guess, game_info* game_ptr, game_info game) {
     for (int i = 0; guess[i]; i ++) {
-        if (guess[i] == game->code[i]) {
-            game->well_placed++;
+        if (guess[i] == game.code[i]) {
+            game_ptr->well_placed++;
+            game.pieces[guess[i] - '0'] -= 1;
         }
-        else if (game->pieces[guess[i] - '0']) {
-            game->misplaced++;
+        else if (game.pieces[guess[i] - '0']) {
+            game_ptr->misplaced++;
+            game.pieces[guess[i] - '0'] -= 1;
         }
     }
-    return game->well_placed == CODE_SIZE;
+    return game_ptr->well_placed == CODE_SIZE;
 }
 
 bool validate_input(char* input, int n) {
@@ -98,12 +100,17 @@ bool validate_input(char* input, int n) {
 }
 
 int main(int ac, char** argv) {
-    game_info game;
+    game_info game = {
+        {0,0,0,0,0,0,0,0,0},
+        0,
+        0,
+        0,
+        NULL,
+        false
+    };
     char guess[100];
     char secret_code[] = "0000";
-    bool pieces[] = {0,0,0,0,0,0,0,0,0};
     game.code = secret_code;
-    game.pieces = pieces;
     unsigned int n = 1;
     unsigned int round = 0;
     bool valid_input = true;
@@ -113,7 +120,7 @@ int main(int ac, char** argv) {
     printf("\n%s\n", game.code);
     printf("%d\n", game.attempts);
 
-    if ((ac == 3 || ac == 5) && validate_input(game.code, CODE_SIZE)) {
+    if ((ac == 1 || ac == 3 || ac == 5) && validate_input(game.code, CODE_SIZE)) {
 
         printf("Will you find the secret code?\n");
         printf("Please enter a valid guess\n");
@@ -135,7 +142,7 @@ int main(int ac, char** argv) {
                 guess[CODE_SIZE] = '\0';
 
             if (validate_input(guess, n)) {
-                game.won = check_guess(guess, &game);
+                game.won = check_guess(guess, &game, game);
                 valid_input = true;
             }
             else {
