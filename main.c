@@ -21,10 +21,10 @@ typedef struct s_game_info {
 *   Generates a randomized secret code,
 *   using the "current time" as the seed
 *   value for the random number generator.
-*   It will always generate a 4-digit random
-*   integer and convert it to a string
-*   while replacing 9s with 0s.
-*   
+*   Guaranteed to always generate a 4-digit
+*   random integer that gets converted to a
+*   string while replacing 9s with 0s.
+*
 */
 char* generate_secret_code(char* secret_code) {
     unsigned int num;
@@ -42,7 +42,7 @@ char* generate_secret_code(char* secret_code) {
 }
 
 /*
-*   Reads user input consisting of optional 
+*   Reads user input consisting of optional
 *   secret code or number of attempts if any.
 *   Otherwise, it generates a randomized secret
 *   code and sets number of attempts to MAX_ATTEMPTS.
@@ -51,12 +51,12 @@ char* generate_secret_code(char* secret_code) {
 *   to make it easier to keep track of misplaced pieces.
 */
 void init_game(char** argv, game_info* game) {
-    game->code =    argv[1] && argv[2] && argv[1][1] == 'c' ? argv[2] :
-                    argv[3] && argv[4] && argv[3][1] == 'c' ? argv[4] :
-                    generate_secret_code(game->code);
-    game->attempts =    argv[3] && argv[4] && argv[3][1] == 't' ? atoi(argv[4]) :
-                        argv[1] && argv[2] && argv[1][1] == 't' ? atoi(argv[2]) :
-                        MAX_ATTEMPTS;
+    game->code = argv[1] && argv[2] && argv[1][1] == 'c' ? argv[2] :
+                 argv[3] && argv[4] && argv[3][1] == 'c' ? argv[4] :
+                 generate_secret_code(game->code);
+    game->attempts = argv[3] && argv[4] && argv[3][1] == 't' ? atoi(argv[4]) :
+                     argv[1] && argv[2] && argv[1][1] == 't' ? atoi(argv[2]) :
+                     MAX_ATTEMPTS;
     game->well_placed = 0;
     game->misplaced = 0;
     game->won = false;
@@ -70,6 +70,12 @@ void print_bit_map(unsigned int bits[NUM_PIECES]) {
         printf("%u ", bits[i]);
 }
 
+/*
+    Compares the player's guess against the secret code,
+    keep tracking of well placed and misplaced pieces.
+    Returns True if the guess matches the secret code,
+    or False otherwise.
+*/
 bool check_guess(char* guess, game_info* game_ptr, game_info game) {
     for (int i = 0; guess[i]; i ++) {
         if (guess[i] == game.code[i]) {
@@ -87,7 +93,19 @@ bool check_guess(char* guess, game_info* game_ptr, game_info game) {
 bool validate_input(char* input, int n) {
     int i = 0;
 
-    // Return false if guess is not exactly CODE_SIZE characters.
+    
+    // Replace the newline character with '\0' if
+    // the user pressed Enter to submit input. Otherwise,
+    // print a newline if the user pressed Ctrl + D.
+    if (input[n - 1] == '\n')
+        input[n - 1] = '\0';
+    else
+        printf("\n");
+
+    // If the user pressed Ctrl + D, there will be a null terminator
+    // at the end of input string and n must equal to CODE_SIZE.
+    // If the user pressed the Enter key, n must be equal to CODE_SIZE + 1.
+    // Returns False otherwise.
     if(!((n == CODE_SIZE && input[CODE_SIZE] == '\0') || n == CODE_SIZE + 1))
         return false;
 
@@ -96,71 +114,51 @@ bool validate_input(char* input, int n) {
             return false;
         i++;
     }
-    return (i == 4) && true;
+    return i == CODE_SIZE;
 }
 
 int main(int ac, char** argv) {
-    game_info game = {
-        {0,0,0,0,0,0,0,0,0},
-        0,
-        0,
-        0,
-        NULL,
-        false
-    };
-    char guess[100];
     char secret_code[] = "0000";
-    game.code = secret_code;
+    game_info game = {{0,0,0,0,0,0,0,0,0}, 0, 0, 0, secret_code, false};
+    char guess[100];
     unsigned int n = 1;
     unsigned int round = 0;
     bool valid_input = true;
 
     init_game(argv, &game);
     print_bit_map(game.pieces);
-    printf("\n%s\n", game.code);
-    printf("%d\n", game.attempts);
+    // printf("\n%s\n", game.code);
+    // printf("%d\n", game.attempts);
 
     if ((ac == 1 || ac == 3 || ac == 5) && validate_input(game.code, CODE_SIZE)) {
 
         printf("Will you find the secret code?\n");
         printf("Please enter a valid guess\n");
 
-        while(n && game.attempts) {
+        while(game.attempts) {
             if (valid_input) {
                 printf("---\n");
                 printf("Round %d\n", round++);
             }
 
-            n = read(0, guess, 100);
-
-            // Print a newline if the user pressed Ctrl + D.
-            // or replace the newline character with '\0'
-            // if the user entered CODE_SIZE characters and pressed Enter.
-            if (guess[n - 1] != '\n')
-                printf("\n");
-            else if (n == CODE_SIZE + 1 && guess[CODE_SIZE] == '\n')
-                guess[CODE_SIZE] = '\0';
-
-            if (validate_input(guess, n)) {
-                game.won = check_guess(guess, &game, game);
-                valid_input = true;
+            if ((n = read(0, guess, 100)) && validate_input(guess, n)) {
+                if (check_guess(guess, &game, game)) {
+                    printf("Congratz! You did it!\n");
+                    break;
+                }
+                else {
+                    valid_input = true;
+                    printf("Well placed pieces: %d\n", game.well_placed);
+                    printf("Misplaced pieces: %d\n", game.misplaced);
+                    game.well_placed = 0;
+                    game.misplaced = 0;
+                    game.attempts--;
+                }
             }
             else {
                 printf("Wrong input!\n");
                 valid_input = false;
                 continue;
-            }
-
-            if (game.won) {
-                printf("Congratz! You did it!\n");
-                break;
-            }
-            else {
-                printf("Well placed pieces: %d\n", game.well_placed);
-                printf("Misplaced pieces: %d\n", game.misplaced);
-                game.well_placed = 0;
-                game.misplaced = 0;
-                game.attempts--;
             }
         }
     }
