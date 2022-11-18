@@ -82,7 +82,9 @@ bool check_guess(char* guess, game_info* game_ptr, game_info game) {
             game_ptr->well_placed++;
             game.pieces[guess[i] - '0'] -= 1;
         }
-        else if (game.pieces[guess[i] - '0']) {
+    }
+    for (int i = 0; guess[i]; i ++) {
+        if (guess[i] != game.code[i] && game.pieces[guess[i] - '0']) {
             game_ptr->misplaced++;
             game.pieces[guess[i] - '0'] -= 1;
         }
