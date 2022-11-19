@@ -21,7 +21,6 @@ typedef struct s_game_info {
 *   Guaranteed to always generate a 4-digit
 *   random integer that gets converted to a
 *   string while replacing 9s with 0s.
-*
 */
 char* generate_secret_code(char* secret_code) {
     unsigned int num;
@@ -44,15 +43,15 @@ void print_bit_map(unsigned int bits[NUM_PIECES]) {
 }
 
 /*
-    Compares the player's guess against the secret code,
-    keep tracking of well placed and misplaced pieces.
-    Returns True if the guess matches the secret code,
-    or False otherwise.
+*    Compares the player's guess against the secret code,
+*    keep tracking of well placed and misplaced pieces.
+*    Returns True if the guess matches the secret code,
+*    or False otherwise.
 */
-bool check_guess(char* guess, game_info game) {
+bool is_correct_guess(char* guess, game_info game) {
     unsigned int well_placed = 0;
     unsigned int misplaced = 0;
-    bool won = false;
+
     for (int i = 0; guess[i]; i ++) {
         if (guess[i] == game.code[i]) {
             well_placed++;
@@ -65,22 +64,24 @@ bool check_guess(char* guess, game_info game) {
             game.pieces[guess[i] - '0'] -= 1;
         }
     }
-    won = well_placed == CODE_SIZE;
-    if (won) {
+    if (well_placed == CODE_SIZE) {
         printf("Congratz! You did it!\n");
+        return true;
     }
     else {
         printf("Well placed pieces: %d\n", well_placed);
         printf("Misplaced pieces: %d\n", misplaced);
+        return false;
     }
-    return won;
 }
 
-// If the user pressed Ctrl + D, there will be a null terminator
-// at the end of input string and n must be equal to CODE_SIZE.
-// If the user pressed the Enter key, n must be equal to CODE_SIZE + 1.
-// Returns False otherwise.
-bool is_valid_input(int n, char* input) {
+/*
+*   Checks whether a given code is valid and returns True if
+*   the length of the code is equal to CODE_SIZE and
+*   the code has valid pieces in it.
+*   Returns False otherwise.
+*/
+bool is_valid_code(int n, char* input) {
     if(!((n == CODE_SIZE && input[CODE_SIZE] == '\0')))
         return false;
     n = 0;
@@ -88,13 +89,15 @@ bool is_valid_input(int n, char* input) {
         if (input[n] < '0' || input[n++] > '8')
             return false;
     }
-    return n == CODE_SIZE;
+    return true;
 }
 
+/* 
+*   Reads user input and replaces the newline character with '\0'
+*   if the user pressed Enter to submit input. Otherwise,
+*   print a newline if the user pressed Ctrl + D.
+*/
 int read_input(char* guess) {
-    // Replace the newline character with '\0' if
-    // the user pressed Enter to submit input. Otherwise,
-    // print a newline if the user pressed Ctrl + D.
     int n = read(0, guess, 100);
     if (n && guess[n - 1] == '\n') {
         guess[n - 1] = '\0';
@@ -125,7 +128,7 @@ bool init_game(char** argv, int argc, game_info* game) {
     for (int i = 0; i < CODE_SIZE; i++)
         game->pieces[game->code[i] - '0'] += 1;
 
-    return (argc == 1 || argc == 3 || argc == 5) && is_valid_input(CODE_SIZE, game->code);
+    return (argc == 1 || argc == 3 || argc == 5) && is_valid_code(CODE_SIZE, game->code);
 }
 
 int main(int ac, char** argv) {
@@ -134,36 +137,26 @@ int main(int ac, char** argv) {
     char guess[100];
     unsigned int n = 1;
     unsigned int round = 0;
-    bool next_round = true;
-
-    // print_bit_map(game.pieces);
-    // printf("\n%s\n", game.code);
-    // printf("%d\n", game.attempts);
+    bool is_next_round = true;
 
     if (init_game(argv, ac, &game)) {
         printf("Will you find the secret code?\n");
         printf("Please enter a valid guess\n");
-
-        while(n && game.attempts) {
-            if (next_round) {
+        while(game.attempts) {
+            if (is_next_round) {
                 printf("---\n");
                 printf("Round %d\n", round++);
             }
-            n = read_input(guess);
-            if (is_valid_input(n, guess)) {
-                if (check_guess(guess, game)) {
-                    break;
-                }
-                else {
-                    next_round = true;
-                    game.attempts--;
-                }
+            if (!(n = read_input(guess))) {
+                break;
             }
-            else if (n) {
-                next_round = false;
+            if (!is_valid_code(n, guess)) {
+                is_next_round = false;
                 printf("Wrong input!\n");
                 continue;
             }
+            is_next_round = true;
+            game.attempts = is_correct_guess(guess, game) ? 0 : game.attempts - 1;
         }
     }
     return 0;
