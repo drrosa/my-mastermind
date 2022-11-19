@@ -24,39 +24,6 @@ char* generate_secret_code(char* secret_code) {
 }
 
 /*
-*    Compares the player's guess against the secret code,
-*    keep tracking of well placed and misplaced pieces.
-*    Returns True if the guess matches the secret code,
-*    or False otherwise.
-*/
-bool is_correct_guess(char* guess, game_info game) {
-    unsigned int well_placed = 0;
-    unsigned int misplaced = 0;
-
-    for (int i = 0; guess[i]; i ++) {
-        if (guess[i] == game.code[i]) {
-            well_placed++;
-            game.pieces[guess[i] - '0'] -= 1;
-        }
-    }
-    for (int i = 0; guess[i]; i ++) {
-        if (guess[i] != game.code[i] && game.pieces[guess[i] - '0']) {
-            misplaced++;
-            game.pieces[guess[i] - '0'] -= 1;
-        }
-    }
-    if (well_placed == CODE_SIZE) {
-        printf("Congratz! You did it!\n");
-        return true;
-    }
-    else {
-        printf("Well placed pieces: %d\n", well_placed);
-        printf("Misplaced pieces: %d\n", misplaced);
-        return false;
-    }
-}
-
-/*
 *   Checks whether a given code is valid and returns True if
 *   the length of the code is equal to CODE_SIZE and
 *   the code has valid pieces in it.
@@ -87,6 +54,39 @@ int read_input(char* guess) {
     else
         printf("\n");
     return n;
+}
+
+/*
+*    Compares the player's guess against the secret code,
+*    keep tracking of well placed and misplaced pieces.
+*    Returns True if the guess matches the secret code,
+*    or False otherwise.
+*/
+bool is_correct_guess(char* guess, game_info game) {
+    unsigned int well_placed = 0;
+    unsigned int misplaced = 0;
+
+    for (int i = 0; guess[i]; i ++) {
+        if (guess[i] == game.code[i]) {
+            well_placed++;
+            game.pieces[guess[i] - '0'] -= 1;
+        }
+    }
+    for (int i = 0; guess[i]; i ++) {
+        if (guess[i] != game.code[i] && game.pieces[guess[i] - '0']) {
+            misplaced++;
+            game.pieces[guess[i] - '0'] -= 1;
+        }
+    }
+    if (well_placed == CODE_SIZE) {
+        printf("Congratz! You did it!\n");
+        return true;
+    }
+    else {
+        printf("Well placed pieces: %d\n", well_placed);
+        printf("Misplaced pieces: %d\n", misplaced);
+        return false;
+    }
 }
 
 /*
