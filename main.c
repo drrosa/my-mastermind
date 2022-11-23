@@ -51,7 +51,7 @@ int read_input(char* guess) {
         guess[n - 1] = '\0';
         n--;
     }
-    else
+    else if(n)
         printf("\n");
     return n;
 }
@@ -95,7 +95,7 @@ bool is_correct_guess(char* guess, game_info game) {
 *   Otherwise, it generates a randomized secret
 *   code and sets number of attempts to MAX_ATTEMPTS.
 *   Lastly, it counts the number of secret code pieces
-*   of the same color and initiliazes the rest to zero
+*   of the same "color" and initiliazes the rest to zero
 *   to make it easier to keep track of misplaced pieces.
 */
 bool init_game(char** argv, int argc, game_info* game) {
@@ -129,6 +129,7 @@ int main(int ac, char** argv) {
                 printf("Round %d\n", round++);
             }
             if (!(n = read_input(guess))) {
+                printf("exit\n");
                 break;
             }
             if (!is_valid_code(n, guess)) {
