@@ -1,5 +1,5 @@
 NAME = my_mastermind
-SRCS = main.c
+SRCS = main.c init.c input.c
 WARNINGS = -Wall -Werror -Wextra
 
 all: 	$(NAME)
