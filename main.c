@@ -2,7 +2,8 @@
 
 /*
 *    Compares the player's guess against the secret code,
-*    keeping tracking of well placed and misplaced pieces.
+*    while counting the number of well placed and misplaced
+*    pieces which is then given as feedback to the player.
 *    Returns True if the guess matches the secret code,
 *    or False otherwise.
 */

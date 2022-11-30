@@ -3,8 +3,7 @@
 /*
 *   Checks whether a given code is valid and returns True if
 *   the length of the code is equal to CODE_SIZE and
-*   the code has valid pieces in it.
-*   Returns False otherwise.
+*   the code has valid pieces in it. Returns False otherwise.
 */
 bool is_valid_code(int n, char* input) {
     if(!((n == CODE_SIZE && input[CODE_SIZE] == '\0')))
@@ -20,7 +19,7 @@ bool is_valid_code(int n, char* input) {
 /* 
 *   Reads user input and replaces the newline character with '\0'
 *   if the user pressed Enter to submit input. Otherwise,
-*   print a newline if the user pressed Ctrl + D.
+*   print a newline and add a null terminator if the user pressed Ctrl + D.
 */
 int read_input(char* guess) {
     int n = read(0, guess, 100);
@@ -28,7 +27,9 @@ int read_input(char* guess) {
         guess[n - 1] = '\0';
         n--;
     }
-    else if(n)
+    else if(n) {
         printf("\n");
+        guess[n] = '\0';
+    }
     return n;
 }
